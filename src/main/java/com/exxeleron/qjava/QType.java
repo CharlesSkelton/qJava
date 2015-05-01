@@ -64,11 +64,23 @@ public enum QType {
     SECOND_LIST(18),
     TIME(-19),
     TIME_LIST(19),
-    LAMBDA(100),
-    LAMBDA_PART(104),
     TABLE(98),
     KEYED_TABLE(99),
-    DICTIONARY(99);
+    DICTIONARY(99),
+    LAMBDA(100),
+    UNARY_PRIMITIVE_FUNC(101),
+    BINARY_PRIMITIVE_FUNC(102),
+    TERNARY_OPERATOR_FUNC(103),
+    COMPOSITION_FUNC(105),
+    ADVERB_FUNC_106(106),
+    ADVERB_FUNC_107(107),
+    ADVERB_FUNC_108(108),
+    ADVERB_FUNC_109(109),
+    ADVERB_FUNC_110(110),
+    ADVERB_FUNC_111(111),
+    @Deprecated
+    LAMBDA_PART(104),
+    PROJECTION(104);
 
     QType(final int code) {
         this.code = (byte) code;
@@ -111,6 +123,7 @@ public enum QType {
             put(Double[].class, DOUBLE_LIST);
             put(Character.class, CHAR);
             put(char[].class, STRING);
+            put(char[][].class, GENERAL_LIST);
             put(String.class, SYMBOL);
             put(String[].class, SYMBOL_LIST);
             put(QTimestamp.class, TIMESTAMP);
@@ -134,6 +147,7 @@ public enum QType {
             put(QTable.class, TABLE);
             put(QKeyedTable.class, KEYED_TABLE);
             put(QLambda.class, LAMBDA);
+            put(QProjection.class, PROJECTION);
         }
     });
 
@@ -184,7 +198,6 @@ public enum QType {
             put(TABLE, QTable.class);
             put(KEYED_TABLE, QKeyedTable.class);
             put(LAMBDA, QLambda.class);
-            put(LAMBDA_PART, QLambda.class);
         }
     });
 

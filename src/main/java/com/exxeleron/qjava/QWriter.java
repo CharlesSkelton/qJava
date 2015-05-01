@@ -146,6 +146,8 @@ public final class QWriter {
             writeList(obj, qtype);
         } else if ( qtype == QType.LAMBDA ) {
             writeLambda((QLambda) obj);
+        } else if ( qtype == QType.PROJECTION ) {
+            writeProjection((QProjection) obj);
         } else {
             throw new QWriterException("Unable to serialize q type: " + qtype);
         }
@@ -159,6 +161,9 @@ public final class QWriter {
             writer.writeByte((byte) ((Boolean) obj ? 1 : 0));
         break;
         case GUID:
+            if ( protocolVersion < 3 ) {
+                throw new QWriterException("kdb+ protocol version violation: guid not supported pre kdb+ v3.0");
+            }
             writeGuid((UUID) obj);
         break;
         case BYTE:
@@ -241,6 +246,9 @@ public final class QWriter {
             break;
         }
         case GUID_LIST: {
+            if ( protocolVersion < 3 ) {
+                throw new QWriterException("kdb+ protocol version violation: guid not supported pre kdb+ v3.0");
+            }
             final UUID[] list = (UUID[]) obj;
             writer.writeInt(list.length);
             for ( final UUID a : list ) {
@@ -486,20 +494,19 @@ public final class QWriter {
         writeObject(t.getValues());
     }
 
-    private void writeLambda( final QLambda l ) throws IOException, QException {
-        if ( l.getParameters() == null || l.getParameters().length == 0 ) {
-            writer.writeByte(QType.LAMBDA.getTypeCode());
-            writer.writeByte((byte) 0);
-            writeString(l.getExpression().toCharArray());
-        } else {
-            writer.writeByte(QType.LAMBDA_PART.getTypeCode());
-            writer.writeInt(l.getParameters().length + 1);
-            writer.writeByte(QType.LAMBDA.getTypeCode());
-            writer.writeByte((byte) 0);
-            writeString(l.getExpression().toCharArray());
-            for ( final Object p : l.getParameters() ) {
-                writeObject(p);
-            }
+    private void writeLambda( final QLambda l ) throws IOException {
+        writer.writeByte(QType.LAMBDA.getTypeCode());
+        writer.writeByte((byte) 0);
+        writeString(l.getExpression().toCharArray());
+    }
+    
+    private void writeProjection( final QProjection p ) throws IOException, QException {
+        writer.writeByte(QType.PROJECTION.getTypeCode());
+        final int length = p.getParameters().length;
+        writer.writeInt(length);
+        
+        for ( int i = 0; i < length; i++ ) {
+            writeObject(p.getParameters()[i]);
         }
     }
 
@@ -537,8 +544,8 @@ public final class QWriter {
             final byte[] arr = new byte[] { (byte) ((value >> 56) & 0xff), (byte) ((value >> 48) & 0xff), (byte) ((value >> 40) & 0xff),
                                            (byte) ((value >> 32) & 0xff), (byte) ((value >> 24) & 0xff), (byte) ((value >> 16) & 0xff),
                                            (byte) ((value >> 8) & 0xff), (byte) ((value >> 0) & 0xff) };
-            for ( int i = 0; i < arr.length; i++ ) {
-                writeByte(arr[i]);
+            for (byte anArr : arr) {
+                writeByte(anArr);
             }
         }
 

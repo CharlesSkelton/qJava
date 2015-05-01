@@ -83,11 +83,7 @@ public class QCallbackConnection extends QBasicConnection {
      * already exists, nothing happens.
      */
     public synchronized void startListener() {
-        if ( messageListener == null ) {
-            messageListener = new QListener();
-            listenerThread = new Thread(messageListener, "qJava-listener" + this.toString());
-            listenerThread.start();
-        }
+        startListener("qJava-listener" + this.toString());
     }
 
     /**
@@ -128,7 +124,7 @@ public class QCallbackConnection extends QBasicConnection {
      * @param listener
      *            a {@link QMessagesListener} to be registered
      */
-    public synchronized void addMessagesListener( final QMessagesListener listener ) {
+    public void addMessagesListener( final QMessagesListener listener ) {
         messagesListeners.add(listener);
     }
 
@@ -138,7 +134,7 @@ public class QCallbackConnection extends QBasicConnection {
      * @param listener
      *            a {@link QMessagesListener} to be unregistered
      */
-    public synchronized void removeMessagesListener( final QMessagesListener listener ) {
+    public void removeMessagesListener( final QMessagesListener listener ) {
         messagesListeners.remove(listener);
     }
 
@@ -177,7 +173,7 @@ public class QCallbackConnection extends QBasicConnection {
                     fireMessageReceivedEvent(message);
                 } catch ( final QException e ) {
                     fireErrorReceivedEvent(new QErrorMessage(e));
-                } catch ( final IOException e ) {
+                } catch ( final Exception e ) {
                     fireErrorReceivedEvent(new QErrorMessage(e));
                     running = false;
                     break;

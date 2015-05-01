@@ -15,6 +15,7 @@
  */
 package com.exxeleron.qjava;
 
+import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -24,15 +25,17 @@ import java.util.Date;
 /**
  * Represents q timestamp type.
  */
-public final class QTimestamp implements DateTime {
+public final class QTimestamp implements DateTime, Serializable {
+    private static final long serialVersionUID = 762296525233866140L;
+    
     private static final String NULL_STR = "0Np";
 
     private static final DateFormat dateFormat = new SimpleDateFormat("yyyy.MM.dd'D'HH:mm:ss.SSS");
     private static final NumberFormat nanosFormatter = new DecimalFormat("000000");
     private static final int NANOS_PER_SECOND = 1000000;
 
-    private Date datetime;
-    private Long value;
+    private transient Date datetime;
+    private final Long value;
 
     /**
      * Creates new {@link QTimestamp} instance using specified q date value.
@@ -93,7 +96,7 @@ public final class QTimestamp implements DateTime {
     @Override
     public String toString() {
         final Date dt = toDateTime();
-        return dt == null ? NULL_STR : getDateformat().format(dt) + nanosFormatter.format(value % NANOS_PER_SECOND);
+        return dt == null ? NULL_STR : getDateformat().format(dt) + getNanosformat().format(value % NANOS_PER_SECOND);
 
     }
 
@@ -151,11 +154,11 @@ public final class QTimestamp implements DateTime {
         }
     }
 
-    private static synchronized DateFormat getDateformat() {
-        return dateFormat;
+    private static DateFormat getDateformat() {
+        return (DateFormat) dateFormat.clone();
     }
 
-    private static synchronized NumberFormat getNanosformat() {
-        return nanosFormatter;
+    private static NumberFormat getNanosformat() {
+        return (NumberFormat) nanosFormatter.clone();
     }
 }

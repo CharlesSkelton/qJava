@@ -1,12 +1,12 @@
 /**
  *  Copyright (c) 2011-2014 Exxeleron GmbH
- * 
+ *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
  *  You may obtain a copy of the License at
- * 
+ *
  *    http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  *  Unless required by applicable law or agreed to in writing, software
  *  distributed under the License is distributed on an "AS IS" BASIS,
  *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,12 +17,33 @@ package com.exxeleron.qjava;
 
 import static org.junit.Assert.assertEquals;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 
 import org.junit.Test;
 
 public class TestDateTime {
+
+    private static <T extends Serializable> byte[] pickle( final T obj ) throws IOException {
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        final ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(obj);
+        oos.close();
+        return baos.toByteArray();
+    }
+
+    private static <T extends Serializable> T unpickle( final byte[] b, final Class<T> cl ) throws IOException, ClassNotFoundException {
+        final ByteArrayInputStream bais = new ByteArrayInputStream(b);
+        final ObjectInputStream ois = new ObjectInputStream(bais);
+        final Object o = ois.readObject();
+        return cl.cast(o);
+    }
 
     @Test
     public void testQDate() {
@@ -66,6 +87,18 @@ public class TestDateTime {
     }
 
     @Test
+    public void testQDateSerialization() throws ClassNotFoundException, IOException {
+        final QDate[] ref = new QDate[] { new QDate(-1645), new QDate(-365), new QDate(0), new QDate(3653), new QDate(Integer.MIN_VALUE) };
+        for ( int i = 0; i < ref.length; i++ ) {
+            final QDate copy = unpickle(pickle(ref[i]), QDate.class);
+
+            assertEquals(ref[i], copy);
+            assertEquals(ref[i].toString(), copy.toString());
+            assertEquals(ref[i].getValue(), copy.getValue());
+        }
+    }
+
+    @Test
     public void testQDateTime() {
         final Calendar c = Calendar.getInstance();
         c.set(1999, 0, 1, 23, 59, 59);
@@ -104,6 +137,19 @@ public class TestDateTime {
     }
 
     @Test
+    public void testQDateTimeSerialization() throws ClassNotFoundException, IOException {
+        final QDateTime[] ref = new QDateTime[] { new QDateTime(-364.0000115), new QDateTime(2008.0833218), new QDateTime(0.), new QDateTime(3653.599792),
+                                                 new QDateTime(Double.NaN) };
+        for ( int i = 0; i < ref.length; i++ ) {
+            final QDateTime copy = unpickle(pickle(ref[i]), QDateTime.class);
+
+            assertEquals(ref[i], copy);
+            assertEquals(ref[i].toString(), copy.toString());
+            assertEquals(ref[i].getValue(), copy.getValue());
+        }
+    }
+
+    @Test
     public void testQMinute() {
         final Calendar c = Calendar.getInstance();
         c.set(2000, 0, 1, 0, 0);
@@ -122,6 +168,9 @@ public class TestDateTime {
         assertEquals("13:30", new QMinute(810).toString());
         assertEquals("23:59", new QMinute(1439).toString());
 
+        assertEquals("-13:30", new QMinute(-810).toString());
+        assertEquals("52:23", new QMinute(3143).toString());
+
         assertEquals("0Nu", new QMinute(Integer.MIN_VALUE).toString());
     }
 
@@ -131,9 +180,24 @@ public class TestDateTime {
         assertEquals(new QMinute(810), QMinute.fromString("13:30"));
         assertEquals(new QMinute(1439), QMinute.fromString("23:59"));
 
+        assertEquals(new QMinute(-810), QMinute.fromString("-13:30"));
+        assertEquals(new QMinute(3143), QMinute.fromString("52:23"));
+
         assertEquals(new QMinute(Integer.MIN_VALUE), QMinute.fromString(null));
         assertEquals(new QMinute(Integer.MIN_VALUE), QMinute.fromString(""));
         assertEquals(new QMinute(Integer.MIN_VALUE), QMinute.fromString("0Nu"));
+    }
+
+    @Test
+    public void testQMinuteSerialization() throws ClassNotFoundException, IOException {
+        final QMinute[] ref = new QMinute[] { new QMinute(-1645), new QMinute(0), new QMinute(3653), new QMinute(Integer.MIN_VALUE) };
+        for ( int i = 0; i < ref.length; i++ ) {
+            final QMinute copy = unpickle(pickle(ref[i]), QMinute.class);
+
+            assertEquals(ref[i], copy);
+            assertEquals(ref[i].toString(), copy.toString());
+            assertEquals(ref[i].getValue(), copy.getValue());
+        }
     }
 
     @Test
@@ -178,6 +242,18 @@ public class TestDateTime {
     }
 
     @Test
+    public void testQMonthSerialization() throws ClassNotFoundException, IOException {
+        final QMonth[] ref = new QMonth[] { new QMonth(-1645), new QMonth(0), new QMonth(3653), new QMonth(Integer.MIN_VALUE) };
+        for ( int i = 0; i < ref.length; i++ ) {
+            final QMonth copy = unpickle(pickle(ref[i]), QMonth.class);
+
+            assertEquals(ref[i], copy);
+            assertEquals(ref[i].toString(), copy.toString());
+            assertEquals(ref[i].getValue(), copy.getValue());
+        }
+    }
+
+    @Test
     public void testQSecond() {
         final Calendar c = Calendar.getInstance();
         c.set(2000, 0, 1, 0, 0, 0);
@@ -196,6 +272,9 @@ public class TestDateTime {
         assertEquals("13:30:13", new QSecond(48613).toString());
         assertEquals("23:59:59", new QSecond(86399).toString());
 
+        assertEquals("51:46:39", new QSecond(186399).toString());
+        assertEquals("-23:59:59", new QSecond(-86399).toString());
+
         assertEquals("0Nv", new QSecond(Integer.MIN_VALUE).toString());
     }
 
@@ -205,9 +284,24 @@ public class TestDateTime {
         assertEquals(new QSecond(48613), QSecond.fromString("13:30:13"));
         assertEquals(new QSecond(86399), QSecond.fromString("23:59:59"));
 
+        assertEquals(new QSecond(186399), QSecond.fromString("51:46:39"));
+        assertEquals(new QSecond(-86399), QSecond.fromString("-23:59:59"));
+
         assertEquals(new QSecond(Integer.MIN_VALUE), QSecond.fromString(null));
         assertEquals(new QSecond(Integer.MIN_VALUE), QSecond.fromString(""));
         assertEquals(new QSecond(Integer.MIN_VALUE), QSecond.fromString("0Nv"));
+    }
+
+    @Test
+    public void testQSecondSerialization() throws ClassNotFoundException, IOException {
+        final QSecond[] ref = new QSecond[] { new QSecond(-1645), new QSecond(0), new QSecond(3653), new QSecond(Integer.MIN_VALUE) };
+        for ( int i = 0; i < ref.length; i++ ) {
+            final QSecond copy = unpickle(pickle(ref[i]), QSecond.class);
+
+            assertEquals(ref[i], copy);
+            assertEquals(ref[i].toString(), copy.toString());
+            assertEquals(ref[i].getValue(), copy.getValue());
+        }
     }
 
     @Test
@@ -228,7 +322,10 @@ public class TestDateTime {
     public void testQTimeToString() {
         assertEquals("00:00:00.000", new QTime(0).toString());
         assertEquals("13:30:13.000", new QTime(48613000).toString());
-        assertEquals("23:59:59.000", new QTime(86399000).toString());
+        assertEquals("23:59:59.001", new QTime(86399001).toString());
+
+        assertEquals("51:46:39.050", new QTime(186399050).toString());
+        assertEquals("-23:59:59.100", new QTime(-86399100).toString());
 
         assertEquals("0Nt", new QTime(Integer.MIN_VALUE).toString());
     }
@@ -239,9 +336,24 @@ public class TestDateTime {
         assertEquals(new QTime(0), QTime.fromString("00:00:00.000"));
         assertEquals(new QTime(86399000), QTime.fromString("23:59:59.000"));
 
+        assertEquals(new QTime(186399001), QTime.fromString("51:46:39.001"));
+        assertEquals(new QTime(-86399000), QTime.fromString("-23:59:59.000"));
+
         assertEquals(new QTime(Integer.MIN_VALUE), QTime.fromString(null));
         assertEquals(new QTime(Integer.MIN_VALUE), QTime.fromString(""));
         assertEquals(new QTime(Integer.MIN_VALUE), QTime.fromString("0Nt"));
+    }
+
+    @Test
+    public void testQTimeSerialization() throws ClassNotFoundException, IOException {
+        final QTime[] ref = new QTime[] { new QTime(-1645), new QTime(0), new QTime(3653), new QTime(Integer.MIN_VALUE) };
+        for ( int i = 0; i < ref.length; i++ ) {
+            final QTime copy = unpickle(pickle(ref[i]), QTime.class);
+
+            assertEquals(ref[i], copy);
+            assertEquals(ref[i].toString(), copy.toString());
+            assertEquals(ref[i].getValue(), copy.getValue());
+        }
     }
 
     @Test
@@ -290,6 +402,19 @@ public class TestDateTime {
     }
 
     @Test
+    public void testQTimespanSerialization() throws ClassNotFoundException, IOException {
+        final QTimespan[] ref = new QTimespan[] { new QTimespan(-259199000000000L), new QTimespan(0L), new QTimespan(48613000000000L),
+                                                 new QTimespan(Long.MIN_VALUE) };
+        for ( int i = 0; i < ref.length; i++ ) {
+            final QTimespan copy = unpickle(pickle(ref[i]), QTimespan.class);
+
+            assertEquals(ref[i], copy);
+            assertEquals(ref[i].toString(), copy.toString());
+            assertEquals(ref[i].getValue(), copy.getValue());
+        }
+    }
+
+    @Test
     public void testQTimestamp() {
         final Calendar c = Calendar.getInstance();
         c.set(1995, 6, 1, 13, 30, 13);
@@ -329,5 +454,18 @@ public class TestDateTime {
         assertEquals(new QTimestamp(Long.MIN_VALUE), QTimestamp.fromString(null));
         assertEquals(new QTimestamp(Long.MIN_VALUE), QTimestamp.fromString(""));
         assertEquals(new QTimestamp(Long.MIN_VALUE), QTimestamp.fromString("0Np"));
+    }
+
+    @Test
+    public void testQTimestampSerialization() throws ClassNotFoundException, IOException {
+        final QTimestamp[] ref = new QTimestamp[] { new QTimestamp(-259199000000000L), new QTimestamp(0L), new QTimestamp(48613000000000L),
+                                                   new QTimestamp(Long.MIN_VALUE) };
+        for ( int i = 0; i < ref.length; i++ ) {
+            final QTimestamp copy = unpickle(pickle(ref[i]), QTimestamp.class);
+
+            assertEquals(ref[i], copy);
+            assertEquals(ref[i].toString(), copy.toString());
+            assertEquals(ref[i].getValue(), copy.getValue());
+        }
     }
 }

@@ -15,22 +15,20 @@
  */
 package com.exxeleron.qjava;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 
 /**
  * Represents q time type.
  */
-public final class QTime implements DateTime {
+public final class QTime implements DateTime, Serializable {
+    private static final long serialVersionUID = 762296525233866140L;
 
     private static final String NULL_STR = "0Nt";
 
-    private static final DateFormat dateFormat = new SimpleDateFormat("HH:mm:ss.SSS");
-
-    private Date datetime;
-    private Integer value;
+    private transient Date datetime;
+    private final Integer value;
 
     /**
      * Creates new {@link QTime} instance using specified q date value.
@@ -88,8 +86,16 @@ public final class QTime implements DateTime {
      */
     @Override
     public String toString() {
-        final Date dt = toDateTime();
-        return dt == null ? NULL_STR : getDateformat().format(dt);
+        if ( value == Integer.MIN_VALUE ) {
+            return NULL_STR;
+        } else {
+            final int millis = Math.abs(value);
+            final int seconds = millis / 1000;
+            final int minutes = seconds / 60;
+            final int hours = minutes / 60;
+
+            return String.format("%s%02d:%02d:%02d.%03d", value < 0 ? "-" : "", hours, minutes % 60, seconds % 60, millis % 1000);
+        }
     }
 
     /**
@@ -133,14 +139,19 @@ public final class QTime implements DateTime {
      *             when date cannot be parsed
      */
     public static QTime fromString( final String date ) {
+        if ( date == null || date.length() == 0 || date.equals(NULL_STR) ) {
+            return new QTime(Integer.MIN_VALUE);
+        }
+
         try {
-            return date == null || date.length() == 0 || date.equals(NULL_STR) ? new QTime(Integer.MIN_VALUE) : new QTime(getDateformat().parse(date));
+            final String[] parts = date.split(":|\\.");
+            final int hours = Integer.parseInt(parts[0]);
+            final int minutes = Integer.parseInt(parts[1]);
+            final int seconds = Integer.parseInt(parts[2]);
+            final int millis = Integer.parseInt(parts[3]);
+            return new QTime((millis + 1000 * seconds + 60000 * minutes + 3600000 * Math.abs(hours)) * (hours > 0 ? 1 : -1));
         } catch ( final Exception e ) {
             throw new IllegalArgumentException("Cannot parse QTime from: " + date, e);
         }
-    }
-
-    private static synchronized DateFormat getDateformat() {
-        return dateFormat;
     }
 }

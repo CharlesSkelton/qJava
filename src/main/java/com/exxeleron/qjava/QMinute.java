@@ -15,22 +15,20 @@
  */
 package com.exxeleron.qjava;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.io.Serializable;
 import java.util.Calendar;
 import java.util.Date;
 
 /**
  * Represents q minute type.
  */
-public final class QMinute implements DateTime {
+public final class QMinute implements DateTime, Serializable {
+    private static final long serialVersionUID = 762296525233866140L;
 
     private static final String NULL_STR = "0Nu";
 
-    private static final DateFormat dateFormat = new SimpleDateFormat("HH:mm");
-
-    private Date datetime;
-    private Integer value;
+    private transient Date datetime;
+    private final Integer value;
 
     /**
      * Creates new {@link QMinute} instance using specified q date value.
@@ -90,8 +88,14 @@ public final class QMinute implements DateTime {
      */
     @Override
     public String toString() {
-        final Date dt = toDateTime();
-        return dt == null ? NULL_STR : getDateformat().format(dt);
+        if ( value == Integer.MIN_VALUE ) {
+            return NULL_STR;
+        } else {
+            final int minutes = Math.abs(value);
+            final int hours = minutes / 60;
+
+            return String.format("%s%02d:%02d", value < 0 ? "-" : "", hours, minutes % 60);
+        }
     }
 
     /**
@@ -135,14 +139,18 @@ public final class QMinute implements DateTime {
      *             when date cannot be parsed
      */
     public static QMinute fromString( final String date ) {
+        if ( date == null || date.length() == 0 || date.equals(NULL_STR) ) {
+            return new QMinute(Integer.MIN_VALUE);
+        }
+
         try {
-            return date == null || date.length() == 0 || date.equals(NULL_STR) ? new QMinute(Integer.MIN_VALUE) : new QMinute(getDateformat().parse(date));
+            final String[] parts = date.split(":");
+            final int hours = Integer.parseInt(parts[0]);
+            final int minutes = Integer.parseInt(parts[1]);
+            return new QMinute((minutes + 60 * Math.abs(hours)) * (hours > 0 ? 1 : -1));
         } catch ( final Exception e ) {
             throw new IllegalArgumentException("Cannot parse QMinute from: " + date, e);
         }
     }
 
-    private static synchronized DateFormat getDateformat() {
-        return dateFormat;
-    }
 }
